@@ -1,0 +1,16 @@
+{
+	"env": {
+		"server" : {
+			"port": 3000
+		},
+		"db" : {
+			"host": "localhost",
+			"user": "root",
+			"password": "Sys3a95A04011",
+			"database": "jp-rme-tms",
+			"connectionLimit": 100,
+			"dateStrings": "date",
+			"timezone": "jst"
+		}
+	}
+}
