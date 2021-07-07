@@ -20,13 +20,15 @@ class TrainingEmployeeTable extends React.Component {
 
     this.state = {
       //画面状態等
-      isLoading:                  false,  //ロード中はTrue
-      checkedTrainingEmployeeId:  0       //選択中TrainingEmployeeID
+      isLoading:                    false,//ロード中はTrue
+      checkedTrainingEmployeeId:    0,    //選択中TrainingEmployeeID
+      checkedTrainingEmployeeName:  ''    //選択中TrainingEmployeeName
     };
 
     //ハンドルをバインド
-    this.handleOnChange = this.handleOnChange.bind(this);
-    this.handleOnClick  = this.handleOnClick.bind( this );
+    this.handleOnChange                     = this.handleOnChange.bind(this);
+    this.handleOnClick                      = this.handleOnClick.bind( this );
+    this.setSearchTrainingEmployeeSiteData  = this.props.setSearchTrainingEmployeeSiteData;
 
     /* ログ */
     console.log(  this.constructor.name + '.Constructor' );
@@ -48,22 +50,37 @@ class TrainingEmployeeTable extends React.Component {
    * 項目変更ハンドラ *
   ***/
   handleOnChange( event ) {
-    const target        = event.target;
-    const value         = target.type === 'checkbox' ? target.checked : target.value;
-    const name          = target.name;
-
-    console.log( `name:[${name}] value[${value}]`  );
+    const value             = event.target.value;
+    const name              = event.target.name;
+    const id_training_name  = "checkedTrainingEmployeeName_" + value; 
+    const training_name     = document.getElementById( id_training_name ).innerHTML;
+    let   json_training_employee_id;
+    let   state_training_employee_id;
 
     this.setState(
       {
-        [name]: value,
+        checkedTrainingEmployeeId:    value,
+        checkedTrainingEmployeeName:  training_name
       },
       () => {
-        /* 確実に更新されてから実行 */      
-        console.log( `handleOnChange setState後 checkedTrainingEmployeeId[${this.state.checkedTrainingEmployeeId}]`  );
-
         /* 親クラスのイベントを起動 */
-        this.props.setSelectedRow( this.state.checkedTrainingEmployeeId );      
+        this.props.setSelectedRow( this.state.checkedTrainingEmployeeId , this.state.checkedTrainingEmployeeName );      
+
+        /* サイト別情報テーブル表示を促す？？？ */
+        for( let i=0; i<this.training_employee_data.length; i++ ) {
+
+          json_training_employee_id   = parseInt( this.training_employee_data[i].header.qualification_training_id );
+          state_training_employee_id  = parseInt( this.state.checkedTrainingEmployeeId );
+
+          console.log( `選択 i[${i}] 受信データ[${this.training_employee_data[i].header.qualification_training_id}] 保存データ[${this.state.checkedTrainingEmployeeId}]` );
+
+          if( json_training_employee_id === state_training_employee_id ) {
+            //一致した
+            console.log( `選択 i[${i}]` );
+            this.setSearchTrainingEmployeeSiteData( this.training_employee_data[i].body );
+            break;
+          }
+        }
       } 
     );
   }
@@ -72,6 +89,7 @@ class TrainingEmployeeTable extends React.Component {
    * ボタン押下ハンドラ *
   ***/
   handleOnClick( event ) {
+    //ボタン押下
   }
   
   /***
@@ -83,7 +101,6 @@ class TrainingEmployeeTable extends React.Component {
     const json_search_result  = this.training_employee_data;
     let   table_title;
     let   column_title;
-
 
     switch( mode ) {
 
@@ -139,9 +156,9 @@ class TrainingEmployeeTable extends React.Component {
               const expiration_days   = searchItem.header.expiration_days;
 
               let   color;
-              const number            = index + 1;
-              const check_id          = "checkedTrainingEmployeeId" + number;
-
+              const number                  = index + 1;
+              const id_tr_emp_checkbox      = "checkedTrainingEmployeeId_"   + training_id;
+              const id_check_training_name  = "checkedTrainingEmployeeName_" + training_id;
 
               /* 背景・文字色作成 */
               if( ( (attended_on === null) || ( (attended_on !== null) && (expiration_on < str_today) ) ) && (deadline_on < str_today) ) {
@@ -169,13 +186,13 @@ class TrainingEmployeeTable extends React.Component {
                 <tr key={training_id} className={color}>
                   <td scope="col">
                     <div className="form-check">
-                      <input className="form-check-input" type="radio" id={check_id} name="checkedTrainingEmployeeId" value={training_id}  checked={this.state.checkedTrainingEmployeeId === String(training_id)} onChange={ (event) => {this.handleOnChange(event)} } />
-                      <label className="form-check-label" htmlFor={check_id}>
+                      <input className="form-check-input" type="radio" id={id_tr_emp_checkbox} name="checkedTrainingEmployeeId" value={training_id} stored={training_name} checked={this.state.checkedTrainingEmployeeId === String(training_id)} onChange={ this.handleOnChange} />
+                      <label className="form-check-label" htmlFor={id_tr_emp_checkbox}>
                       </label>
                     </div>
                   </td>
                   <td scope="col">{number}</td>
-                  <td scope="col">{training_name}</td>
+                  <td scope="col" id={id_check_training_name}>{training_name}</td>
                   <td scope="col">{category_name}</td>
                   <td scope="col">{class_name}</td>
                   <td scope="col">{is_site_separeted === 1 ? "◯" : "－"}</td>

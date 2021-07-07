@@ -38,7 +38,7 @@ router.post( "/login/" , (req, res) => {
 	const	mode				=	req.body.searchEntryMode;
 	let		results			= {};
 
-	console.log( `trainingemployee [POST] searchLogin[${login_id}] searchCategory[${category_id}] searchClass[${class_id}] searchAttend[${attend}] searchEntryMode[${mode}]` );
+	console.log( `trainingemployee/login/ [POST] searchLogin[${login_id}] searchCategory[${category_id}] searchClass[${class_id}] searchAttend[${attend}] searchEntryMode[${mode}]` );
 
 
 	(async () => {
@@ -158,6 +158,118 @@ router.post( "/login/" , (req, res) => {
 		res.json( results );
   } )();
 });
+
+
+/*
+** 教育・トレーニング・従業員情報取得
+*/
+router.post( "/update/" , (req, res) => {
+
+	const	training_employee_id	= req.body.qualification_training_employee_id;
+	const	attended_on						= req.body.attended_on;	
+	const	updated_by						= req.body.updated_by; 	
+	let		results								= {};
+	const today									= new Date();
+	const now_date							= today.getFullYear() + "/" +  ('0' + (today.getMonth()+1)).slice(-2) + "/" + ('0' +today.getDate()).slice(-2); 
+	const now_datetime					= today.getFullYear() + "/" +  ('0' + (today.getMonth()+1)).slice(-2) + "/" + ('0' +today.getDate()).slice(-2)+ " " + ('0' +today.getHours()).slice(-2) + ":" + ('0' +today.getMinutes()).slice(-2) + ":" + ('0' +today.getSeconds()).slice(-2); 
+
+	console.log( `trainingemployee/update/ [POST] training_employee_id[${training_employee_id}] attended_on[${attended_on}] updated_by[${updated_by}] updated_at[${now_datetime}]` );
+
+	(async () => {
+		let		response_obj	=	[];
+
+		try	{
+			let sql_base				= 'SELECT * FROM view_qualification_training_employee WHERE qualification_training_employee_id = ? ';
+			let	search_option		=	[ parseInt(training_employee_id) ];
+			let	sql							=	mysql.format( sql_base , search_option );
+			let	tremp_recs			=	0;
+			
+			console.log( `/update/ -> SQL1[${sql}]` );
+
+			mycon								= await pool.getConnection();
+			const [rows1] 			= await mycon.execute( sql );
+			tremp_recs					= rows1.length;
+
+			console.log( `SQL1[${sql}], 取得レコード数[${tremp_recs}]` );
+			console.log( `data[0] 取得レコード[${rows1[0]}]` );
+
+			if( tremp_recs > 0 ) {
+				/* データが見つかった */
+
+				const	has_expiration_day	=	rows1[0].has_expiration_day;
+				let		expiration_str;
+				let		deadline_str;
+
+				if( has_expiration_day != 0 ) {
+					//有効期限・取得期限設定
+					const	expiration_days	=	rows1[0].expiration_days;
+
+					//有効期限
+					let	expiration_date		=	new Date( attended_on );
+					expiration_date.setDate( expiration_date.getDate() + expiration_days - 1 );
+					expiration_str				=	expiration_date.getFullYear() + "-" +  ('0' + (expiration_date.getMonth()+1)).slice(-2) + "-" + ('0' +expiration_date.getDate()).slice(-2);
+
+					//受講期限
+					let	deadline_date			= new Date( attended_on );
+					deadline_date.setDate( deadline_date.getDate() + expiration_days );
+					deadline_str					= deadline_date.getFullYear() + "-" +  ('0' + (deadline_date.getMonth()+1)).slice(-2) + "-" + ('0' +deadline_date.getDate()).slice(-2);				
+
+				}
+				else {
+					//有効期限・取得期限なし
+					expiration_str	=	null;
+					deadline_str		=	null
+				}
+
+				//教育・トレーニング・従業員データレコード更新
+				sql_base				= 						'UPDATE trans_qualification_training_employee ';
+				sql_base				=	sql_base +	'SET attended_on = ?, expiration_on = ?, deadline_on = ?, is_reminder_sent_first = ?, is_reminder_sent_second = ?, ';
+				sql_base				=	sql_base +	'updated_at = ?, updated_by = ? WHERE qualification_training_employee_id = ?';			
+				update_option		=	[ attended_on, expiration_str, deadline_str, 0, 0, now_datetime, parseInt(updated_by), parseInt(training_employee_id) ];
+				sql							=	mysql.format( sql_base , update_option );
+				tremp_recs			=	0;
+				
+				console.log( `/update/ -> SQL1[${sql}]` );
+	
+				mycon								= await pool.getConnection();
+				const [rows2] 			= await mycon.execute( sql );
+				tremp_recs					= rows2.length;
+	
+				console.log( `/login/ -> length:[${tremp_recs}]` );
+
+				//データセット
+				results = {
+					result: 'SUCCESS',
+					data: response_obj
+				}
+			}
+			else {
+				/* データが見つからなかった */
+				//データセット
+				results = {
+					result: 'ERROR',
+					data: {}
+				}
+			}
+		}
+		catch(e) {
+			console.log(e);
+
+			//データセット
+			results ={
+				result: 'ERROR',
+				data: []
+			}
+		}
+
+		/* 接続解消 */
+		mycon.release();
+
+		/* 応答 */
+		res.json( results );
+  } )();
+});
+
 
 
 module.exports = router; //エクスポートして公開

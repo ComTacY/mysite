@@ -6,6 +6,7 @@ const config    = require('config');
 const express   = require('express');
 const router    = express.Router();
 const mysql     = require('mysql2/promise');
+const { LoaderTargetPlugin } = require('webpack');
 
 
 const db_setting = { //DB接続パラメータ関連
@@ -92,5 +93,59 @@ router.get( "/getemployee" , (req, res) => {
 	} )();
 });
 
+/*
+** メンバ情報を取得する
+*/
+router.get( "/member/:employee_id" , (req, res) => {
+
+	let result		=	'';
+	let	response	=	{};
+	let	members		=	[];
+
+
+	//パラメータからログインを取得する
+	const employee_id	=	parseInt( req.params.employee_id );
+	
+	(async () => {
+		try	{
+			//SQL準備
+			let	sql_base	= 'SELECT * FROM mst_employee WHERE supervisor_employee_id = ?';
+			let	d					= [ employee_id ];
+			let	sql				=	mysql.format( sql_base , d );
+
+			//Connection取得
+			mycon							= await pool.getConnection();
+			const	[rows1] 		= await mycon.execute( sql );
+
+			console.log( `employee/member/:employee_id SQL[${sql} length[${rows1.length}]` );
+
+			//データ検証
+			rows1.forEach( (member) =>{
+				members.push( {
+										login_id:			member.login_id, 
+										employee_id:	member.employee_id 
+				});
+			});
+
+			//正常
+			result = 'SUCCESS';
+		}
+		catch(e) {
+			console.log(e);
+			result = 'ERROR';
+		}
+
+		response = {
+			result:		result,
+			members:	members
+		};
+
+		//Connection開放
+		mycon.release();
+
+		//クライアント応答
+		res.json( response );
+	} )();
+});
 
 module.exports = router; //エクスポートして公開

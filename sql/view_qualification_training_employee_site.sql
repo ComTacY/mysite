@@ -1,10 +1,11 @@
-CREATE VIEW AS
+CREATE VIEW
 	view_qualification_training_employee_site						AS
 SELECT
 	tr_emp_site.qualification_training_employee_site_id		AS	qualification_training_employee_site_id,
 	tr_emp_site.qualification_training_employee_id				AS	qualification_training_employee_id ,
 	tr_emp_site.site_id																AS	site_id ,
 	st.site_name																			AS	site_name,
+	st.site_code																			AS	site_code,
 	tr_emp_site.is_needed_attendance									AS	is_needed_attendance ,
 	tr_emp_site.attended_on													AS	attended_on ,
 	tr_emp_site.expiration_on													AS	expiration_on ,

@@ -1,7 +1,7 @@
 export  const ClientEnv =
 {
     base_url:       'http://localhost',   //サーバURL
-    server_port:    3000                  //サーバポートNo
+    server_port:    8080                  //サーバポートNo
 };
       
       

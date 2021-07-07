@@ -20,7 +20,7 @@ class Header extends React.Component {
           <nav className="navbar navbar-expand-lg navbar-light bg-light">
             <div className="container-fluid">
               <a className="navbar-brand" href="#">
-                <img src={log_tms} alt="" width="30" height="24" className="d-inline-block align-top"/>
+                <img src={log_tms} alt="" width="45" height="30" className="d-inline-block align-top"/>
                 Talent Management System
               </a>
               <div className="collapse navbar-collapse" id="navbarNavAltMarkup">

@@ -10,7 +10,7 @@ import  Loading                     from  "./loading";
 import  {ClientEnv}                 from  "../../../config/client_config";  //設定ファイル
 import  TrainingEmployeeSearchForm  from  "./TrainingEmployeeSearchForm";
 import  TrainingEmployeeTable       from  "./TrainingEmployeeEmployeeTable";
-
+import  TrainingEmployeeSiteTable   from  "./TrainingEmployeeSiteTable";
 
 class TrainingInfo extends React.Component {
   constructor( props ) {
@@ -29,16 +29,17 @@ class TrainingInfo extends React.Component {
       language:         this.props.state.language,
 
       //画面状態等
-      isLoading:        false,  //ロード中はTrue
+      isTrainingEmployeeLoading:      false,  //ロード中はTrue
+      isTrainingEmployeeSiteLoading:  false,  //ロード中はTrue
 
-      //検索用項目
-      searchLogin:    '',
-      searchCategory: '0',
-      searchClass:    '0',
-      searchAttend:   '0',
+      //照会検索結果
+      target_login_id:    '',
+      json_training_employee_result: [],
+      json_training_employee_site_result: [],
 
       //サイト別表示用項目
-      checkedTrainingEmployeeId:  0
+      checkedTrainingEmployeeId:    0,
+      checkedTrainingEmployeeName:  ''
     };
 
     if( this.state.login_id === ('' || null || undefined) ) {
@@ -49,9 +50,6 @@ class TrainingInfo extends React.Component {
     //ハンドルをバインド
     this.handleOnChange = this.handleOnChange.bind(this);
     this.handleOnClick  = this.handleOnClick.bind( this );
-
-    /* データ取得用変数初期化 */
-    this.json_search_result = [];
 
     /* ログ */
     console.log(  this.constructor.name + '.Constructor: '
@@ -89,95 +87,110 @@ class TrainingInfo extends React.Component {
   /***
    * 子コンポーネントから情報をもらう *
   ***/
-  setSearchSelection = ( searchLogin, searchCategory, searchClass, searchAttend )  => {
-
-    console.log( `this[${this.constructor.name}] sLogin[${searchLogin}] sCate[${searchCategory}] sClass[${searchClass}] sAttend[${searchAttend}]` );
+   setSearchTrainingEmployeeData = ( target_login_id, serchData )  => {
 
     this.setState(
       {
-        searchLogin:      searchLogin,
-        searchCategory:   searchCategory,
-        searchClass:      searchClass,
-        searchAttend:     searchAttend
+        isTrainingEmployeeLoading     : true,
+        target_login_id               : target_login_id,
+        json_training_employee_result : serchData
+      },
+        ()=> {
+          this.setState( { isTrainingEmployeeLoading: false } );
       }
     );
   }
- 
+
   /***
-   * 子コンポーネントから検索を掛ける *
+   * 子コンポーネントから情報をもらう *
   ***/
-  getSearchData = ()  => {
+  setSearchTrainingEmployeeSiteData = ( serchData )  => {
 
-    console.log( `getSearchData sLogin[${this.state.searchLogin}] sCate[${this.state.searchCategory}] sClass[${this.state.searchClass}] sAttend[${this.state.searchAttend}]` );
+    this.setState(
+      {
+        isTrainingEmployeeSiteLoading       : true,
+        json_training_employee_site_result  : serchData
+      },
+      ()=> {
+        this.setState( { isTrainingEmployeeSiteLoading: false } );
+      }
+    );
+  }
 
-    /* 実施 */
-    this.getSearchEmployee();
+  /***
+   * 子コンポーネントから情報をもらう  TrainingEmployeeEmployeeTable*
+  ***/
+  setSelectedRow = ( selected_row_key , selected_training_name )  => {
+
+    console.log( `this[${this.constructor.name}] selected_row_key[${selected_row_key}] selected_training_name[${selected_training_name}]` );
+
+    this.setState(
+      {
+        checkedTrainingEmployeeId:    selected_row_key,
+        checkedTrainingEmployeeName:  selected_training_name
+      }
+    );
   }
   
   /***
-   * 資格・教育・トレーニング・従業員データ取得 *
+   * 子コンポーネントから情報問い合せ form TrainingEmployeeSearchForm*
   ***/
-  async getSearchEmployee() {
-  
-    /* 読み込み中 */
-    this.setState( {isLoading: true} );
-
-    const post_data = {
-      searchLogin:      this.state.searchLogin,
-      searchCategory:   this.state.searchCategory === (''|undefined|null) ? '0' : this.state.searchCategory,
-      searchClass:      this.state.searchClass    === (''|undefined|null) ? '0' : this.state.searchClass,
-      searchAttend:     this.state.searchAttend   === (''|undefined|null) ? '0' : this.state.searchAttend,
-      searchEntryMode:  0,  //全表示モード　is_managaer_entry が ON/OFF両方とも全件読む
-    }
-
-    console.log(    "post_data.searchLogin[" + post_data.searchLogin + "] post_data.searchCategory [" + post_data.searchCategory + "] "
-              + "post_data.searchClass[" + post_data.searchClass + "] post_data.searchAttend [" + post_data.searchAttend + "]" );
-
-    // 検索実行 
-    let axios_options = {
-      method  : 'POST',
-      url     : `${ClientEnv.base_url}:${ClientEnv.server_port}/api/v1/trainingemployee/login/` ,
-      data    : post_data,
-      timeout : 30 * 1000  // ms
-    };
-
-    /* ログ */
-    console.log(  this.constructor.name + '.getSearch: METHOD[' + axios_options.method + '] URL[' + axios_options.url + '] options[' + axios.data + ']' );
-
-    // 実行
-    let response = await axios( axios_options );
-    if( response.data.result === 'SUCCESS' ) {
-      this.json_search_result = response.data.data;
-    }
-    else {
-      this.json_search_result = [];
-    }
-
-    /* 読み込み完了 */
-    this.setState( {isLoading: false} );
+  getTrainingEmployeeId() {
+    return( this.state.checkedTrainingEmployeeId );
   }
-
-
+  
+  /***
+   * 子コンポーネントから情報問い合せ form TrainingEmployeeSearchForm*
+  ***/
+  getTrainingEmployeeName() {
+    return( this.state.checkedTrainingEmployeeNameId );
+  }
+  
   /***
    * 書き込み処理 *
   ***/
   render() {
 
-    let table_render_jsx;
     let render_jsx;
-
-    //読み込み終わり
-    if( this.state.isLoading )  {
-      table_render_jsx = "";
-    }
-    else {
-      table_render_jsx = ( 
+    let form_render_jsx;
+    let training_employee_table_render_jsx;
+    let training_employee_site_table_render_jsx;
+    
+    //フォーム設定
+    form_render_jsx = (
+      <TrainingEmployeeSearchForm
+        language                      = {this.state.language}
+        mode                          = {0}
+        target_login_id               = {''}
+        employee_id                   = {this.state.employee_id}
+        setSearchTrainingEmployeeData = {this.setSearchTrainingEmployeeData}
+        getTrainingEmployeeId         = {this.getTrainingEmployeeId}
+        getTrainingEmployeeName       = {this.getTrainingEmployeeName}
+      />
+    );
+      
+    //教育・トレーニング・従業員テーブル
+    if( !this.state.isTrainingEmployeeLoading ) {
+      training_employee_table_render_jsx = (
         <TrainingEmployeeTable
-          language                = {this.state.language}
-          mode                    = {0}
-          target_login_id         = {''}
-          training_employee_data  = {this.json_search_result}
-        />          
+          language                          = {this.state.language}
+          mode                              = {0}
+          target_login_id                   = {this.state.searchLogin}
+          training_employee_data            = {this.state.json_training_employee_result}
+          setSelectedRow                    = {this.setSelectedRow}
+          setSearchTrainingEmployeeSiteData = {this.setSearchTrainingEmployeeSiteData}
+        /> 
+      );
+    }
+    
+    //教育・トレーニング・従業員・サイトテーブル
+    if( !this.state.isTrainingEmployeeSiteLoading ) {
+      training_employee_site_table_render_jsx = (
+        <TrainingEmployeeSiteTable
+          language                      = {this.state.language}
+          mode                          = {0}
+          training_employee_site_data   = {this.state.json_training_employee_site_result}
+        />
       );
     }
 
@@ -188,19 +201,9 @@ class TrainingInfo extends React.Component {
             <h3>資格・教育・トレーニング情報照会</h3>
           </div>
         </div>
-
-        <TrainingEmployeeSearchForm
-            language            = {this.state.language}
-            mode                = {0}
-            target_login_id     = {''}
-            setSearchSelection  = {this.setSearchSelection}
-            getSearchData       = {this.getSearchData}
-        />
-
-        { table_render_jsx }
-
-        <table>
-        </table>
+        {form_render_jsx}
+        {training_employee_table_render_jsx}  
+        {training_employee_site_table_render_jsx}
       </div>
     );
 
